@@ -22,7 +22,6 @@ namespace VirtualDesktop
             RegistHotKey();
             LoadAppConfig();
             CreateTool();
-
         }
         private HotkeyHelper hotkeyHelper;
         private int favKey;
