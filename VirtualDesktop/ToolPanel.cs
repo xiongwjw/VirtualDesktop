@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
+using IWshRuntimeLibrary; 
 
 namespace VirtualDesktop
 {
@@ -17,7 +18,24 @@ namespace VirtualDesktop
         private int verNum = 0;
         int blankSeperator = 20;
         int elementSeperator = 20;
-        public bool isAdjust = false;
+        private bool isAdjust = false;
+
+        public bool IsAdjust
+        {
+            get
+            {
+                return isAdjust;
+            }
+            set
+            {
+                isAdjust = value;
+                if (!isAdjust && adjustToolMenu!=null)
+                    adjustToolMenu.Text = enterSetting;
+                else if (adjustToolMenu != null)
+                    adjustToolMenu.Text = exitSetting;
+            }
+        }
+
 
         public ToolPanel(int sizeWidth, int sizeHeight, int horNum, int verNum)
         {
@@ -41,11 +59,14 @@ namespace VirtualDesktop
 
         }
         private ContextMenuStrip contextMenu = new ContextMenuStrip();
+        private ToolStripItem adjustToolMenu = null;
+        private string enterSetting = "Enter Setting";
+        private string exitSetting = "Exit Setting";
         private void InitContextMenu()
         {
             this.contextMenu.Items.Clear();
             this.contextMenu.Items.Add("Close", Properties.Resources.close);
-            this.contextMenu.Items.Add("Adjust", Properties.Resources.Adjust);
+            adjustToolMenu = this.contextMenu.Items.Add(enterSetting, Properties.Resources.Adjust);
             this.contextMenu.Font = new System.Drawing.Font("Consolas", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             foreach (ToolStripItem items in this.contextMenu.Items)
                 items.Click += new EventHandler(items_Click);
@@ -59,15 +80,13 @@ namespace VirtualDesktop
                 {
                     Application.Exit();
                 }
-                else if (ts.Text == "Adjust")
+                else if (ts.Text == enterSetting)
                 {
-                    ts.Text = "No Adjust";
-                    this.isAdjust = true;
+                    IsAdjust = true;
                 }
-                else if (ts.Text == "No Adjust")
+                else if (ts.Text == exitSetting)
                 {
-                    ts.Text = "Adjust";
-                    this.isAdjust = false;
+                    IsAdjust = false;
                 }
             }
 
@@ -118,7 +137,7 @@ namespace VirtualDesktop
             base.OnPaint(e);
             int pix = 3;
             Graphics g = e.Graphics;
-            Brush b = new SolidBrush(Color.Blue);
+            Brush b = new SolidBrush(Color.Yellow);
             g.FillRectangle(b, 0, 0, this.Width, pix);
             g.FillRectangle(b, 0, 0, pix, this.Height);
             g.FillRectangle(b, 0, this.Height - pix, this.Width, pix);
@@ -153,6 +172,19 @@ namespace VirtualDesktop
             if (OnDropFileEvent != null)
                 OnDropFileEvent(name, path, position);
         }
+
+        private string GetShortcutFile(string shortcutFile)
+        {
+            if (System.IO.File.Exists(shortcutFile))
+            {
+                WshShell shell = new WshShell();
+                IWshShortcut shellClass = (IWshShortcut)shell.CreateShortcut(shortcutFile);
+                return shellClass.TargetPath;
+            }
+            else
+                return string.Empty;
+        }
+
         protected override void OnDragDrop(DragEventArgs drgevent)
         {
 
@@ -167,9 +199,17 @@ namespace VirtualDesktop
                 isMove = true;
             }
             else
+            {
                 fileName = ((System.Array)drgevent.Data.GetData(DataFormats.FileDrop)).GetValue(0).ToString();
 
-            if (string.IsNullOrEmpty(fileName) || (!File.Exists(fileName)&& !Directory.Exists(fileName)))
+                if (Path.GetExtension(fileName) == ".lnk")
+                {
+                    fileName = GetShortcutFile(fileName);
+                }
+            }
+                
+
+            if (string.IsNullOrEmpty(fileName) || (!System.IO.File.Exists(fileName)&& !Directory.Exists(fileName)))
             {
                 return;
             }

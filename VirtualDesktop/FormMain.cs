@@ -22,6 +22,7 @@ namespace VirtualDesktop
             RegistHotKey();
             LoadAppConfig();
             CreateTool();
+
         }
         private HotkeyHelper hotkeyHelper;
         private int favKey;
@@ -72,6 +73,7 @@ namespace VirtualDesktop
         {
             if (keyData == Keys.Escape)
             {
+                tp.IsAdjust = false;
                 this.Hide();
                 return true;
             }
@@ -188,8 +190,12 @@ namespace VirtualDesktop
         }
         private void FormCliboard_Deactivate(object sender, EventArgs e)
         {
-            //this.TopMost = false;
-            //this.Hide();
+            //if (!tp.IsAdjust)
+            //{
+            //    this.TopMost = false;
+            //    this.Hide();
+            //}
+
         }
 
 

@@ -48,7 +48,7 @@ namespace VirtualDesktop
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
-            if(pControl.isAdjust)
+            if(pControl.IsAdjust)
                 this.DoDragDrop(this, DragDropEffects.Move);
             else if(e.Button==MouseButtons.Right)
             {
@@ -72,13 +72,21 @@ namespace VirtualDesktop
             base.OnMouseClick(e);
             if (e.Button == MouseButtons.Left)
             {
-                if (File.Exists(path) || Directory.Exists(path))
+                try
                 {
-                    Process.Start(path);
-                    ClickEvent();
+                    if (File.Exists(path) || Directory.Exists(path))
+                    {
+                        Process.Start(path);
+                        ClickEvent();
+                    }
+                    else
+                        MessageBox.Show("can't find the path:" + path);
+
                 }
-                else
-                    MessageBox.Show("can't find the path:" + path);
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
             }
 
         }
