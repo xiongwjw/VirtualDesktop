@@ -24,9 +24,9 @@ namespace VirtualDesktop
 
         private void btnConfirm_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(name) || name.Length > 10)
+            if (string.IsNullOrEmpty(txtName.Text) || txtName.Text.Length > 10)
             {
-                MessageBox.Show("Name is not the right format!");
+                MessageBox.Show("Name length >0 && <10");
                 txtName.Focus();
                 return;
             }

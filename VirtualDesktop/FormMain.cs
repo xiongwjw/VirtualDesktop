@@ -42,12 +42,12 @@ namespace VirtualDesktop
             string numString = System.Configuration.ConfigurationManager.AppSettings["grid"];
             string[] tmpArray = numString.Split(',');
             if (tmpArray.Length != 2) ApplicationExit();
-            bool ret =  int.TryParse(tmpArray[1], out horNum);
+            bool ret = int.TryParse(tmpArray[1], out horNum);
             if (!ret) ApplicationExit();
             ret = int.TryParse(tmpArray[0], out verNum);
             if (!ret) ApplicationExit();
 
-          
+
             string sizeString = System.Configuration.ConfigurationManager.AppSettings["size"];
             tmpArray = sizeString.Split(',');
             if (tmpArray.Length != 2) ApplicationExit();
@@ -73,6 +73,7 @@ namespace VirtualDesktop
         {
             if (keyData == Keys.Escape)
             {
+                tp.IsAdjust = false;
                 this.Hide();
                 return true;
             }
@@ -86,9 +87,10 @@ namespace VirtualDesktop
             AppConfigSection Section = config.GetSection("applications") as AppConfigSection;
             AppKeyValueSetting keyvalue = new AppKeyValueSetting();
             keyvalue.Name = name; keyvalue.Path = path; keyvalue.Position = position;
+            Section.KeyValues.Remove(keyvalue.Name);
             Section.KeyValues.Add(keyvalue);
             config.Save();
-            ConfigurationManager.RefreshSection("applications"); 
+            ConfigurationManager.RefreshSection("applications");
         }
         private void MoveButton(string name, string path, string position)
         {
@@ -99,7 +101,7 @@ namespace VirtualDesktop
             keyvalue.Name = name; keyvalue.Path = path; keyvalue.Position = position;
             Section.KeyValues.Add(keyvalue);
             config.Save();
-            ConfigurationManager.RefreshSection("applications"); 
+            ConfigurationManager.RefreshSection("applications");
         }
         private void tp_OnDrag(string name, string path, string position)
         {
@@ -112,15 +114,21 @@ namespace VirtualDesktop
             tp.Location = new Point(0, 0);
             this.Width = tp.Width; this.Height = tp.Height;
             this.Controls.Add(tp);
-            AppConfigSection appSection = (AppConfigSection)ConfigurationManager.GetSection("applications");
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            AppConfigSection appSection = config.GetSection("applications") as AppConfigSection;
+            AppKeyValueCollection UnUsedList = new AppKeyValueCollection();
+
             foreach (AppKeyValueSetting app in appSection.KeyValues)
             {
-                
+
                 string path = app.Path;
                 string name = app.Name;
                 string position = app.Position;
-                if (!File.Exists(path)&&!Directory.Exists(path))
+                if (!File.Exists(path) && !Directory.Exists(path))
+                {
+                    UnUsedList.Add(app);
                     continue;
+                }
                 Image img = GetFileImage(path);
                 int x = 0; int y = 0;
                 string numString = position;
@@ -132,14 +140,24 @@ namespace VirtualDesktop
                 if (!ret) continue;
                 tp.AddButton(x, y, name, path, img);
             }
-            
-           
+
+            if (UnUsedList.Count > 0)
+            {
+                foreach (AppKeyValueSetting app in UnUsedList)
+                {
+                    appSection.KeyValues.Remove(app.Name);
+                }
+                config.Save();
+                ConfigurationManager.RefreshSection("applications");
+            }
+
+
             int SH = (Screen.PrimaryScreen.Bounds.Height - this.Height) / 2;
             int SW = (Screen.PrimaryScreen.Bounds.Width - this.Width) / 2;
             this.Location = new Point(SW, SH);
             tp.OnDropFileEvent += new ToolPanel.DropFileDelegate(tp_OnDrag);
-            tp.OnDelEvent+=new ToolPanel.DelDelegate(tp_OnDelEvent);
-            tp.OnClickEvent+=new ToolPanel.ClickDelegate(tp_OnClickEvent);
+            tp.OnDelEvent += new ToolPanel.DelDelegate(tp_OnDelEvent);
+            tp.OnClickEvent += new ToolPanel.ClickDelegate(tp_OnClickEvent);
         }
 
         private void tp_OnClickEvent()
@@ -152,7 +170,7 @@ namespace VirtualDesktop
             AppConfigSection Section = config.GetSection("applications") as AppConfigSection;
             Section.KeyValues.Remove(name);
             config.Save();
-            ConfigurationManager.RefreshSection("applications"); 
+            ConfigurationManager.RefreshSection("applications");
         }
         private Image GetFileImage(string path)
         {
@@ -175,7 +193,7 @@ namespace VirtualDesktop
                 this.BringToFront();
                 this.Select();
             }
-        }      
+        }
         private bool windowCreate = true;
         protected override void OnActivated(EventArgs e)
         {
@@ -189,8 +207,12 @@ namespace VirtualDesktop
         }
         private void FormCliboard_Deactivate(object sender, EventArgs e)
         {
-            //this.TopMost = false;
-            //this.Hide();
+            //if (!tp.IsAdjust)
+            //{
+            //    this.TopMost = false;
+            //    this.Hide();
+            //}
+
         }
 
 
